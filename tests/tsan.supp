@@ -1,0 +1,8 @@
+# tests/tsan.supp — ThreadSanitizer suppressions.
+#
+# Format: `race:<function pattern>` — matches if any frame on either side
+# of the race has a function matching the pattern.
+
+# race:ipc_quit
+# race:audio_close
+# race:ipc_stop

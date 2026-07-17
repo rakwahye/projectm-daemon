@@ -1,0 +1,8 @@
+# tests/lsan.supp — LeakSanitizer suppressions
+#
+# Format: `leak:<substring of library name OR function name>`
+
+leak:libfontconfig
+leak:libexpat
+leak:libgallium
+leak:libcairo
