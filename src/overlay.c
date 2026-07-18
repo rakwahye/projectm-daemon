@@ -2125,9 +2125,9 @@ MODULE_REGISTER(overlay,
 	.ipc_verb = "overlay",
 	.ipc_command = overlay_ipc_show,
 	.ipc_help =
-		"\noverlay — client-side flag grammar:\n"
+		"\noverlay:\n"
 		"  overlay [flags]\n"
-		"    -t  --text LINE     one text line; repeat for multiple lines\n"
+		"    -t  --text LINE     one text line. repeat for multiple lines\n"
 		"    -i  --image PATH    image to show (png/jpeg)\n"
 		"    -du --duration MS   total time on screen (ms)\n"
 		"    -fi --fade-in MS    -fo --fade-out MS\n"
