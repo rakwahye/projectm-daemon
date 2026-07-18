@@ -232,6 +232,7 @@ static void playlist_pending_rescan(void) {
 static void playlist_pending_add(const char *target, int prepend) {
 	/* The live current preset is read on this thread, never off it. */
 	const char *preset = playlist_current_path();
+	if (!preset) preset = playlist_running_path();
 	if (!preset) return;
 
 	char err[256] = {0};
@@ -462,7 +463,8 @@ static int playlist_ipc_add(struct rt *mbox, const char *name, int prepend,
                             char *err_buf, int err_buflen) {
 	struct playlist_view v;
 	playlist_snapshot_get(&v);
-	if (!v.current_path[0]) {
+	/* Prefer the selection, but accept whatever the engine is drawing. */
+	if (!v.current_path[0] && !v.running_path[0]) {
 		snprintf(err_buf, err_buflen, "no running preset");
 		return 0;
 	}
@@ -814,6 +816,9 @@ void path_basename_no_ext(const char *path, char *out, size_t outlen) {
 static char **g_playlist = NULL;
 static int g_playlist_count = 0;
 static int g_playlist_idx = -1;
+
+/* Path the engine was last handed. */
+static char *g_running_path = NULL;
 
 /* read on IPC thread (guards and replies), written on render thread */
 static _Atomic int g_shuffle = 1;
@@ -1601,8 +1606,16 @@ void playlist_load_current(bool smooth) {
 		DBG("[playlist] no engine for %s", path);
 		return;
 	}
-	if (!vis->load_preset(vis, path, smooth))
+	if (!vis->load_preset(vis, path, smooth)) {
 		DBG("[playlist] load rejected: %s", path);
+	} else {
+		/* A rejected load leaves the previous preset on screen. */
+		char *dup = strdup(path);
+		if (dup) {
+			free(g_running_path);
+			g_running_path = dup;
+		}
+	}
 	clock_gettime(CLOCK_MONOTONIC, &g_timer_start);
 	DBG("[playlist] %d/%d: %s%s",
 	        g_playlist_idx + 1, g_playlist_count, path,
@@ -1914,6 +1927,7 @@ void playlist_shutdown(void) {
 	playlist_clear();
 	path_set_free(&g_global_blacklist, &g_global_blacklist_count);
 	if (g_blacklisted_path) { free(g_blacklisted_path); g_blacklisted_path = NULL; }
+	if (g_running_path) { free(g_running_path); g_running_path = NULL; }
 	pthread_mutex_lock(&g_snap_lock);
 	for (int i = 0; i < g_snap_entries_count; i++) free(g_snap_entries[i]);
 	free(g_snap_entries);
@@ -1939,6 +1953,7 @@ const char *playlist_current_path(void) {
 	if (g_playlist_count == 0 || g_playlist_idx < 0) return NULL;
 	return g_playlist[g_playlist_idx % g_playlist_count];
 }
+const char *playlist_running_path(void) { return g_running_path; }
 const char *playlist_name(void) { return g_playlist_name; }
 const char *playlist_src_path(void) { return g_playlist_src_path; }
 int playlist_is_source(void) { return g_playlist_is_source ? 1 : 0; }
@@ -1991,6 +2006,8 @@ void playlist_snapshot_sync(void) {
 		const char *cur = g_playlist[g_playlist_idx % g_playlist_count];
 		if (cur) snprintf(v.current_path, sizeof(v.current_path), "%s", cur);
 	}
+	if (g_running_path)
+		snprintf(v.running_path, sizeof(v.running_path), "%s", g_running_path);
 	if (g_blacklisted_path)
 		snprintf(v.undo_basename, sizeof(v.undo_basename), "%s",
 		         path_basename(g_blacklisted_path));
@@ -2405,7 +2422,7 @@ MODULE_REGISTER(playlist,
 		"  shuffle [on|off]     toggle or set shuffle\n"
 		"  lock [on|off]        toggle or set preset lock\n"
 		"  dur <seconds>        preset auto-advance duration\n"
-		"\nplaylist 'pl':\n"
+		"\nplaylist / pl:\n"
 		"  blacklist            remove current preset from playlist\n"
 		"  blacklist-global     also exclude from every playlist\n"
 		"  undo                 undo last blacklist (either lane)\n"
@@ -2416,4 +2433,4 @@ MODULE_REGISTER(playlist,
 		"  playlist add <n>         append running preset to <n>\n"
 		"  playlist add-pin <n>     prepend running preset to <n>\n"
 		"  playlist pin                move running preset to top of loaded playlist\n"
-		"  Bare names like 'jams' resolve under the playlists dir; use a path with / to bypass.\n");
+		"  Bare names like 'jams' resolve under the playlists dir. use a path with / to bypass.\n");
