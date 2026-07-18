@@ -541,10 +541,10 @@ static void render_composed(char **lines, int nlines,
 	cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint(cr);
 	cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-
 	cairo_select_font_face(cr, g_rtext.font_family,
 		CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 	cairo_set_font_size(cr, g_rtext.font_size);
+	cairo_set_line_join(cr, CAIRO_LINE_JOIN_BEVEL);
 
 	cairo_font_extents_t fe;
 	cairo_font_extents(cr, &fe);
