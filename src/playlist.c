@@ -186,27 +186,18 @@ static void playlist_pending_save(const char *path) {
 		DBG("[autosave] removed stale %s", ap);
 }
 
-/* `payload` is the pre-validated `name\0dir` pair from IPC. An empty dir means
- * an empty playlist. */
+static int playlist_create_file(const char *name, const char *src,
+                                char *err, int errlen);
+
 static void playlist_pending_new(const char *payload) {
 	const char *name = payload;
-	const char *dir = payload + strlen(payload) + 1;
+	const char *src = payload + strlen(payload) + 1;
 
-	playlist_reset();
-	playlist_set_name(name);
-
-	if (dir[0]) {
-		struct stat st;
-		if (stat(dir, &st) != 0)
-			LOG("[playlist] new: cannot stat %s: %s", dir, strerror(errno));
-		else if (S_ISDIR(st.st_mode))
-			playlist_scan_directory(dir);
-		else
-			playlist_load_file(dir);
-	}
-
-	DBG("[playlist] new '%s' (%d presets)", playlist_name(), playlist_count());
-	playlist_seek_start();
+	char err[256] = {0};
+	if (playlist_create_file(name, src, err, sizeof(err)))
+		DBG("[playlist] new: %s", name);
+	else
+		LOG("[playlist] new FAILED: %s: %s", name, err);
 }
 
 static void playlist_pending_merge(const char *path) {
@@ -472,6 +463,14 @@ static int playlist_ipc_add(struct rt *mbox, const char *name, int prepend,
 	return 1;
 }
 
+/* Refuse to clobber an existing playlist file. */
+static int playlist_name_taken(const char *name) {
+	char target[1024];
+	playlist_path_for_name(name, target, sizeof(target));
+	struct stat st;
+	return stat(target, &st) == 0;
+}
+
 static void playlist_ipc_new(struct rt *mbox, const char *name, const char *dir) {
 	rt_pending_post_pair(mbox, PENDING_PLAYLIST_NEW, name, dir);
 }
@@ -691,6 +690,8 @@ list_done: ;
 			} else if (strchr(name, '/')) {
 				/* Names can't be paths - they're identifiers */
 				snprintf(reply, reply_len, "err name cannot contain '/': %s\n", name);
+			} else if (playlist_name_taken(name)) {
+				snprintf(reply, reply_len, "err playlist exists: %s\n", name);
 			} else if (path[0]) {
 				/* Path given. Could be a directory of presets, or a playlist
 				 * file. Either way it must exist. Resolve bare names against the
@@ -708,12 +709,12 @@ list_done: ;
 					         resolved_path[0] ? resolved_path : path);
 				} else {
 					playlist_ipc_new(mbox, name, resolved_path);
-					snprintf(reply, reply_len, "ok new playlist: %s\n", name);
+					snprintf(reply, reply_len, "ok created playlist: %s\n", name);
 				}
 			} else {
 				/* Empty playlist - no path validation needed */
 				playlist_ipc_new(mbox, name, NULL);
-				snprintf(reply, reply_len, "ok new playlist: %s (empty)\n", name);
+				snprintf(reply, reply_len, "ok created playlist: %s\n", name);
 			}
 		}
 
@@ -2232,6 +2233,38 @@ int playlist_undo_blacklist(char *out_name, int outlen,
 	return 1;
 }
 
+static int playlist_create_file(const char *name, const char *src,
+                                char *err, int errlen) {
+	char target[1024];
+	playlist_path_for_name(name, target, sizeof(target));
+	mkdir(app_paths_playlists_dir(), 0755); // harmless if exists
+
+	char **paths = NULL;
+	int count = 0, cap = 0;
+	if (src && src[0]) {
+		struct stat st;
+		if (stat(src, &st) != 0) {
+			snprintf(err, errlen, "cannot stat %s: %s", src, strerror(errno));
+			return 0;
+		}
+		if (S_ISDIR(st.st_mode)) {
+			scan_preset_files_into(src, &paths, &count, &cap);
+		} else {
+			/* Seeding from a .lst takes its active entries only. */
+			char **blist = NULL;
+			int n_blist = 0;
+			parse_playlist_file(src, &paths, &count, &blist, &n_blist);
+			path_set_free(&blist, &n_blist);
+		}
+	}
+
+	int ok = write_playlist_file(target, paths, count, NULL, 0);
+	if (!ok)
+		snprintf(err, errlen, "cannot write playlist file: %s", strerror(errno));
+	path_set_free(&paths, &count);
+	return ok;
+}
+
 int playlist_add_to_file(const char *name, const char *preset_path,
                          int prepend, char *err, int errlen)
 {
@@ -2297,7 +2330,7 @@ int playlist_add_to_file(const char *name, const char *preset_path,
 	path_set_free(&new_active, &n_new);
 	path_set_free(&blist, &n_blist);
 
-	if (rc != 0) {
+	if (rc == 0) {
 		snprintf(err, errlen, "write failed: %s", strerror(errno));
 		return 0;
 	}
@@ -2366,10 +2399,6 @@ void playlist_set_src_path(const char *canonical) {
 void playlist_clear_src_path(void) {
 	g_playlist_src_path[0] = '\0';
 	g_playlist_is_source = false;
-}
-
-void playlist_set_name(const char *name) {
-	snprintf(g_playlist_name, sizeof(g_playlist_name), "%s", name);
 }
 
 void playlist_reset(void) {

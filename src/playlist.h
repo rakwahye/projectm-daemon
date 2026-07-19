@@ -226,13 +226,9 @@ void playlist_set_name_from_path(const char *canonical);
 void playlist_set_src_path(const char *canonical);
 void playlist_clear_src_path(void);
 
-/** Direct name setter (for `playlist new <name> [dir]` IPC which provides
- * an explicit name rather than deriving it from a path). */
-void playlist_set_name(const char *name);
-
 /** Reset the in-memory playlist: clear array, clear per-playlist
  * blacklist, name="default", src_path="", is_source=false. Used by
- * PENDING_PLAYLIST_NEW and PENDING_PLAYLIST_RESCAN before loading the new content. */
+ * PENDING_PLAYLIST_RESCAN before loading the new content. */
 void playlist_reset(void);
 
 /** Append <name> to the access log, suppressing immediate duplicates of
