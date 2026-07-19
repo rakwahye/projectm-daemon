@@ -14,10 +14,6 @@
 
 #include "check.h"
 
-/* Every symbol the module reaches is stubbed below, so a sideways reach into
- * an unstubbed peer fails to link and the link is itself the boundary check.
- * The real headers are included above so the stub signatures are checked
- * against the declarations. */
 int g_debug = 0;
 _Atomic sig_atomic_t g_running = 1;
 
@@ -63,8 +59,6 @@ const struct frame_pacer *module_active_pacer(void) { return &test_pacer; }
 int audio_read(float *out, int max_frames) { (void)out; (void)max_frames;
 											 return S.audio_frames; }
 
-/* The visualizer is reached through rt->vis, not as a direct symbol, so a fake
- * instance is attached to each rt below rather than stubbed here. */
 static void   fake_feed_pcm(struct visualizer *v, const float *data, size_t frames)
 			  { (void)v; (void)data; (void)frames; }
 static double fake_soft_cut_duration(struct visualizer *v) { (void)v; return S.soft_cut; }
@@ -104,8 +98,6 @@ int main(void) {
 	CHECK(b.frame_count == 1, "a second rt counts independently, so the count is not a hidden static");
 	CHECK(S.frames_rendered == 4, "pacer bookkeeping fires on every frame regardless of which rt");
 
-	/* The decision itself belongs to the playlist and is tested there. What is
-	 * proved here is only that the prologue acts on the answer it gets. */
 	reset_stubs();
 	S.should_skip = 0;
 	S.audio_frames = 0;
@@ -125,9 +117,6 @@ int main(void) {
 	wiring_render_prologue(&rt_off);
 	CHECK(S.next_calls == 0, "the prologue does not advance when the playlist says not to");
 
-	/* The engine asks for an advance from inside its own render. Servicing it
-	 * here, before the scene renders, keeps a cross-engine swap off the
-	 * engine's own stack. */
 	reset_stubs();
 	S.should_auto_advance = 0;
 	S.advance_request = 2;
@@ -151,6 +140,12 @@ int main(void) {
 	struct rt rt_lock = { .frame_count = 0, .vis = &g_fake_vis };
 	wiring_render_prologue(&rt_lock);
 	CHECK(S.next_calls == 0, "a lock suppresses the engine's advance request");
+	CHECK(S.advance_request == 2, "a lock holds the request instead of consuming it");
+
+	S.is_locked = 0;
+	wiring_render_prologue(&rt_lock);
+	CHECK(S.next_calls == 1, "unlocking services the request the lock held");
+	CHECK(S.advance_request == 0, "servicing the held request consumes it");
 
 	reset_stubs();
 	g_running = 0;

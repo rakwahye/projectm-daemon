@@ -315,6 +315,7 @@ void playlist_apply_pending(struct rt *rt, int action) {
 	case PENDING_TOGGLE_LOCK: {
 		int on = !playlist_is_locked();
 		playlist_set_locked(on);
+		if (!on) playlist_reset_preset_timer();
 		DBG("[ipc] lock: %s", on ? "on" : "off");
 		break;
 	}

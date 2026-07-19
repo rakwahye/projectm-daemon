@@ -77,12 +77,14 @@ bool wiring_render_prologue(void *user)
 	}
 
 	/* Engine-driven advance. If engine owns procession it
-	 * REQUESTS an advance. */
-	int eng_adv = playlist_poll_advance();
-	if (eng_adv && !playlist_is_locked()) {
-		playlist_next();
-		playlist_load_current(eng_adv != 2);
-		playlist_mark_dirty();
+	 * REQUESTS an advance. Lock is checked before the poll. */
+	if (!playlist_is_locked()) {
+		int eng_adv = playlist_poll_advance();
+		if (eng_adv) {
+			playlist_next();
+			playlist_load_current(eng_adv != 2);
+			playlist_mark_dirty();
+		}
 	}
 
 	return true;
