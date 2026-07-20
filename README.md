@@ -1,41 +1,72 @@
 # projectm-daemon
 
-## Notice
-This is an early release WIP. It's not battle-tested. It's part of a larger project and there is a pile of fixes planned already.
+**A psychadelic music visualizer as your Wayland wallpaper.**
 
-## Dependencies
+Renders [projectM](https://github.com/projectM-visualizer) presets on a layer-shell surface behind your windows, reacting live to whatever audio is playing. **IPC Controlled**. Runs as a standard window where layer-shell isn't available.
 
-It's recommended to source ProjectM from the latest git.
+Early release WIP. Stable, but not battle-tested.
 
-Get it [here](https://github.com/projectm-visualizer/projectm).
+## Requirements
 
-### Packages
+A Wayland compositor. Wallpaper mode needs `wlr-layer-shell`. Hyprland, Sway, and other wlroots compositors work. Compositors without it (GNOME) get windowed mode instead.
 
-- libprojectm (visualizer backend)
-- projectm package (for presets)
-- parec (pipewire-pulse - for audio stream)
-- nc (gnu/openbsd netcat - for audio stream)
-- curl (album art)
-- playerctl (track listing)
+### Build
+
+- `libprojectm` 4.x, built with GLES. [Installing from git](#projectm-git-instructions) is recommended.
+- `libpipewire`
+- `cairo`
+- wlroots, `wayland-protocols` and `wayland-scanner`
+- libgbm, EGL, GLES 3.x
+- libjpeg
+
+### Runtime (optional)
+
+- `projectm` preset packs - daemon renders nothing without them
+- `playerctl` - track title/artist overlay
+- `curl` - album art fetch
+
+## Build and Install
+
+Replace /usr/local/bin with your preferred PATH
+
+```bash
+make
+sudo cp build/projectm-daemon build/projectm-remote /usr/local/bin
+```
 
 ## Usage
 
-Run `make`.
+```
+projectm-remote launch        # start the daemon
+projectm-remote help          # full command list, served live by the daemon
+projectm-remote quit
+```
 
-Copy `build/projectm-daemon` and `build/projectm-remote` to your path.
+To run as a window only, change the mode config line to `display.mode=windowed`. `auto` prefers layer-shell and falls back to a window.
 
-Copy `tools/audio-feed.sh` to your path.
+## ProjectM Git Instructions
 
-Run projectm-remote launch.
+For a bleeding-edge version, clone the Git repository and initialize any submodules:
 
-Run `projectm-remote help` to see the available commands.
+```bash
+git clone https://github.com/projectM-visualizer/projectm.git libprojectm
+cd libprojectm
+git fetch --all --tags
+git submodule init
+git submodule update
+```
 
-### Audio input
+### Build libProjectM
 
-The audio-feed.sh method is temporary glue.
+Replace `/usr/local` with preferred installation prefix.
 
-Start your audio player, find the monitor <N> you want to use with `pactl list short sinks`.
+```bash
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_GLES=ON ..
+```
 
-Run with `audio-feed.sh <N> &` and force to BG. 
-
-Enjoy.
+### Install libProjectM
+```bash
+cmake --build . && sudo cmake --build . --target install
+```
