@@ -57,6 +57,11 @@ static int audio_config_parse(const char *subkey, const char *val) {
 	return 0;
 }
 
+void audio_endpoint(const char **addr, int *port) {
+	if (addr) *addr = s_cfg.addr[0] ? s_cfg.addr : "127.0.0.1";
+	if (port) *port = s_cfg.port;
+}
+
 static void ring_write(const float *data, int frames) {
 	uint64_t head = atomic_load_explicit(&g_ring_head, memory_order_relaxed);
 	for (int i = 0; i < frames; i++) {

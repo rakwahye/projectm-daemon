@@ -53,14 +53,14 @@ endif
 endif
 endif
 
-CFLAGS   := -std=c11 -Wall -Wextra $(OPT_FLAGS) -I$(SRC_DIR) $(VIS_CFLAGS) $(BACKEND_CFLAGS) $(BUILD_DEFINES) $(APP_DEFINES) $(VIS_DEFINES) $(SAN_CFLAGS) $(shell pkg-config --cflags cairo)
+CFLAGS   := -std=c11 -Wall -Wextra $(OPT_FLAGS) -I$(SRC_DIR) $(VIS_CFLAGS) $(BACKEND_CFLAGS) $(BUILD_DEFINES) $(APP_DEFINES) $(VIS_DEFINES) $(SAN_CFLAGS) $(shell pkg-config --cflags cairo libpipewire-0.3)
 
 CXXFLAGS := -Wall -Wextra $(OPT_FLAGS) -I$(SRC_DIR) $(VIS_CFLAGS) $(BACKEND_CFLAGS) $(BUILD_DEFINES) $(APP_DEFINES) $(VIS_DEFINES) $(SAN_CFLAGS)
 DAEMON_CXX_OBJS := $(addprefix $(BUILD_DIR)/,$(VIS_SRCS_CXX:.cpp=.o))
 
 LDFLAGS  := -lwayland-client -lgbm -lEGL -lGLESv2 $(BACKEND_LDFLAGS) \
             $(VIS_LDFLAGS) \
-            -lpthread -ljpeg $(shell pkg-config --libs cairo) -lm $(SAN_LDFLAGS)
+            -lpthread -ljpeg $(shell pkg-config --libs cairo libpipewire-0.3) -lm $(SAN_LDFLAGS)
 
 WL_SCANNER   := wayland-scanner
 WL_PROTO_DIR := $(abspath $(shell pkg-config --variable=pkgdatadir wayland-protocols 2>/dev/null))

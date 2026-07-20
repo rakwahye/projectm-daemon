@@ -9,7 +9,7 @@ VIS_LDFLAGS := $(subst -l:,-l,$(shell pkg-config --libs $(PROJECTM_PC) 2>/dev/nu
 
 DAEMON_SRC_NAMES := \
     main.c wiring.c wiring_render.c pending.c loop.c renderer.c renderer_gbm.c renderer_surfaceless.c \
-    audio.c config.c ipc.c overlay.c art_decode.c filter.c nowplaying.c info_views.c gl_quad.c \
+    audio.c audio_pipewire.c config.c ipc.c overlay.c art_decode.c filter.c nowplaying.c info_views.c gl_quad.c \
     color.c coord.c visualizer.c playlist.c scene_router.c scene.c render_params.c presets.c backend.c \
     app_paths.c module_registry.c cli.c util.c \
     wayland.c wayland_bringup.c headless.c

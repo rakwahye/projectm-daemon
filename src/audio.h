@@ -37,6 +37,11 @@ int audio_init(struct rt *rt);
 /** Non-blocking read from the ring buffer.  Returns frames read (0 if empty). */
 int audio_read(float *out, int max_frames);
 
+/** The configured listener endpoint. Lets an in-process feeder reach the
+ * same socket a network producer would, without duplicating the keys.
+ * Valid after config load. */
+void audio_endpoint(const char **addr, int *port);
+
 /** Ring occupancy in frames. A latency gauge. Multiply by
  * 1000 / AUDIO_SAMPLE_RATE for the milliseconds of audio held in
  * the ring. */
