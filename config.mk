@@ -1,29 +1,35 @@
 APP_ID ?= projectm-daemon
 
 PROJECTM_PC := projectM-4
+PROJECTM_CFLAGS := $(shell pkg-config --cflags $(PROJECTM_PC) 2>/dev/null)
+PROJECTM_LIBS := $(subst -l:,-l,$(shell pkg-config --libs $(PROJECTM_PC) 2>/dev/null))
 
-VIS_SRCS    := visualizer_projectm.c visualizer_null.c
+VIS_SRCS := visualizer_null.c visualizer_projectm.c
 VIS_FACTORY := visualizer_projectm_create
-VIS_CFLAGS  := $(shell pkg-config --cflags $(PROJECTM_PC) 2>/dev/null)
-VIS_LDFLAGS := $(subst -l:,-l,$(shell pkg-config --libs $(PROJECTM_PC) 2>/dev/null))
+VIS_CFLAGS := $(PROJECTM_CFLAGS)
+VIS_LDFLAGS := $(PROJECTM_LIBS)
 
 DAEMON_SRC_NAMES := \
-    main.c wiring.c wiring_render.c pending.c loop.c renderer.c renderer_gbm.c renderer_surfaceless.c \
-    audio.c audio_pipewire.c config.c ipc.c overlay.c art_decode.c filter.c nowplaying.c info_views.c gl_quad.c \
-    color.c coord.c visualizer.c playlist.c scene_router.c scene.c render_params.c presets.c backend.c \
-    app_paths.c module_registry.c cli.c util.c \
-    wayland.c wayland_bringup.c headless.c
+    main.c wiring.c wiring_render.c pending.c loop.c renderer.c \
+    renderer_gbm.c renderer_surfaceless.c audio.c audio_pipewire.c \
+    config.c ipc.c overlay.c art_decode.c filter.c nowplaying.c \
+    info_views.c gl_quad.c color.c coord.c visualizer.c playlist.c \
+    scene_router.c scene.c render_params.c presets.c backend.c \
+    app_paths.c module_registry.c cli.c util.c wayland.c headless.c \
+    wayland_bringup.c
 
 DAEMON_HDR_NAMES := \
-    renderer.h renderer_platform.h output.h loop.h wiring.h wiring_render.h pending.h backend_bringup.h cli.h \
-    audio.h config.h ipc.h overlay.h art_decode.h filter.h nowplaying.h info_views.h gl_quad.h \
-    color.h coord.h visualizer.h scene_router.h playlist.h scene.h render_params.h presets.h backend.h \
-    app_paths.h module_registry.h util.h runtime.h wayland.h layer.h
+    renderer.h renderer_platform.h output.h loop.h wiring.h \
+    wiring_render.h pending.h backend_bringup.h cli.h audio.h config.h \
+    ipc.h overlay.h art_decode.h filter.h nowplaying.h info_views.h \
+    gl_quad.h color.h coord.h visualizer.h scene_router.h playlist.h \
+    scene.h render_params.h presets.h backend.h app_paths.h \
+    module_registry.h util.h runtime.h wayland.h layer.h
 
 BUILD_DEFINES :=
-BACKEND_CFLAGS  :=
+BACKEND_CFLAGS :=
 BACKEND_LDFLAGS :=
-EXTRA_PROTOS   =
+EXTRA_PROTOS =
 
 TESTS := test-color test-module_registry test-wiring_render test-audio test-config-router test-overlay test-art_decode test-scene test-filter test-ipc test-render_params test-presets test-playlist test-backend test-cli test-visualizer-null test-visualizer-select test-scene_router test-info_views
 SANITIZERS := test-asan test-tsan
