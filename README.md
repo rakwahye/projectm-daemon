@@ -2,13 +2,17 @@
 
 **A psychadelic music visualizer as your Wayland wallpaper.**
 
-Renders [projectM](https://github.com/projectM-visualizer) presets on a layer-shell surface behind your windows, reacting live to whatever audio is playing. **IPC Controlled**. Runs as a standard window where layer-shell isn't available.
+Renders [ProjectM](https://github.com/projectM-visualizer) presets on a layer-shell surface behind your windows, reacting live to whatever audio is playing. Runs as a standard window where layer-shell isn't available. Controllabe via *IPC* remote (`projectm-remote`).
 
 Early release WIP. Stable, but not battle-tested.
 
+![Demo](assets/demo.png)
+
+![Demo](assets/demo.gif)
+
 ## Requirements
 
-A Wayland compositor. Wallpaper mode needs `wlr-layer-shell`. Hyprland, Sway, and other wlroots compositors work. Compositors without it (GNOME) get windowed mode instead.
+A Wayland compositor. Wallpaper mode needs `wlr-layer-shell`. Hyprland, Sway, and other compositors work. Compositors without it (GNOME) get windowed mode instead.
 
 ### Build
 
@@ -27,7 +31,7 @@ A Wayland compositor. Wallpaper mode needs `wlr-layer-shell`. Hyprland, Sway, an
 
 ## Build and Install
 
-Replace /usr/local/bin with your preferred PATH
+Replace `/usr/local/bin` with your preferred PATH
 
 ```bash
 make
@@ -70,3 +74,4 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_GLES
 ```bash
 cmake --build . && sudo cmake --build . --target install
 ```
+
