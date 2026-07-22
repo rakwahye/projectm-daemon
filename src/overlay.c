@@ -1319,7 +1319,7 @@ static int overlay_burn_shader_init(void) {
 		"out vec2 v_uv;\n"
 		"void main() {\n"
 		"    vec2 p = vec2(\n"
-		"        (gl_VertexID == 1 || gl_VertexID == 2) ?  1.0 : -1.0,\n"
+		"        (gl_VertexID == 1 || gl_VertexID == 3) ?  1.0 : -1.0,\n"
 		"        (gl_VertexID == 2 || gl_VertexID == 3) ?  1.0 : -1.0);\n"
 		"    gl_Position = vec4(p, 0.0, 1.0);\n"
 		/*    Flip Y for UV so the scratch ends up oriented to match
